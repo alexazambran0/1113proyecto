@@ -44,7 +44,4 @@ Este es mi primer proyecto en GitHub.
 - **Variable:** Espacio en memoria para un dato que cambia.
 - **Sintaxis:** Reglas para escribir el código.
 
----
-![Logo Lobo](lobo.png)
-
 *Ultima actualizacion: 21/04/2026*
