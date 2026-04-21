@@ -15,7 +15,7 @@ Este es mi primer proyecto en GitHub.
 ---
 
 ## Integrantes del grupo
-- Estudiante 1 (Lider):Alexandra Zambrano
+- Estudiante 1:Alexandra Zambrano
 - Estudiante 2: Nicole Nuñez
 - Estudiante 3: Diorletxis Florida
 - Estudiante 4: Andres Saenz
