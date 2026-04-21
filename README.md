@@ -2,7 +2,7 @@
 
 Este es mi primer proyecto en GitHub. 
 
-### Imagen cargada:
+### MECATRONICA:
 ![Logo Lobo](lobo.png)
 
 ---
