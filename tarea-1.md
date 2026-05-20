@@ -1,59 +1,59 @@
-# Tarea 1 â€” Sketch Arduino + Lectura Serial Real
+# Tarea 1 €” Sketch Arduino + Lectura Serial Real
 
-**Proyecto:** Comedero AutomÃ¡tico  
+**Proyecto:** Comedero AutomÃtico  
 **Clase:** IoT + JavaScript  
 **Nivel:** Principiante - Intermedio
 
 ---
 
-## ğŸ¯ Objetivo
+## Ÿ¯ Objetivo
 
 Que el Arduino Uno lea el estado del motor (conectado a L298N) y envÃ­e datos en **JSON por serial** al backend Node.js.
 
 ---
 
-## âš ï¸ REQUISITOS DE HARDWARE
+## š ï¸ REQUISITOS DE HARDWARE
 
 Antes de empezar, **ustedes deben tener:**
 
-- âœ… **Arduino Uno**
-- âœ… **MÃ³dulo L298N** (driver de motor)
-- âœ… **Motor DC** (cualquiera, 3-12V)
-- âœ… **Fuente de poder** (5V o 12V segÃºn el motor)
-- âœ… **Cable USB** para Arduino
+- œ… **Arduino Uno**
+- œ… **MÃ³dulo L298N** (driver de motor)
+- œ… **Motor DC** (cualquiera, 3-12V)
+- œ… **Fuente de poder** (5V o 12V segÃºn el motor)
+- œ… **Cable USB** para Arduino
 
 ---
 
-## ğŸ”Œ Conexiones (L298N + Arduino + Motor)
+## Ÿ”Œ Conexiones (L298N + Arduino + Motor)
 
-### Pines Arduino â†’ L298N
-
-```
-Arduino Pin 9  â†’ IN1 (control motor)
-Arduino Pin 10 â†’ IN2 (control motor)
-Arduino GND    â†’ GND (L298N)
-Arduino 5V     â†’ +5V (L298N, lÃ³gica)
-
-L298N OUT1 + OUT2 â†’ Motor DC
-L298N +12V / GND  â†’ Fuente externa (si el motor necesita mÃ¡s poder)
-```
-
-### Diagrama rÃ¡pido
+### Pines Arduino †’ L298N
 
 ```
-[Arduino] ----PIN9---â†’ [L298N IN1]
-          ----PIN10--â†’ [L298N IN2]
-          ----GND----â†’ [L298N GND]
-                       [L298N OUT1] ---â†’ [MOTOR+]
-                       [L298N OUT2] ---â†’ [MOTOR-]
-          [Fuente 12V] â†’ [L298N +12V]
+Arduino Pin 9  †’ IN1 (control motor)
+Arduino Pin 10 †’ IN2 (control motor)
+Arduino GND    †’ GND (L298N)
+Arduino 5V     †’ +5V (L298N, lÃ³gica)
+
+L298N OUT1 + OUT2 †’ Motor DC
+L298N +12V / GND  †’ Fuente externa (si el motor necesita mÃ¡s poder)
+```
+
+### Diagrama rÃpido
+
+```
+[Arduino] ----PIN9---†’ [L298N IN1]
+          ----PIN10--†’ [L298N IN2]
+          ----GND----†’ [L298N GND]
+                       [L298N OUT1] ---†’ [MOTOR+]
+                       [L298N OUT2] ---†’ [MOTOR-]
+          [Fuente 12V] †’ [L298N +12V]
 ```
 
 ---
 
-## ğŸ“ CÃ³digo Arduino (Sketch)
+## Ÿ“ CÃ³digo Arduino (Sketch)
 
-Copien este cÃ³digo en el Arduino IDE y **cÃ¡rguenlo en el Arduino Uno:**
+Copien este cÃ³digo en el Arduino IDE y **cÃrguenlo en el Arduino Uno:**
 
 ```cpp
 // COMEDERO AUTOMÃTICO - LECTURA MOTOR
@@ -141,15 +141,15 @@ String obtenerTimestamp() {
 
 ---
 
-## âœ… Verificar que funciona
+## œ… Verificar que funciona
 
 1. **Carguen el sketch en Arduino**
-   - Arduino IDE â†’ Sketch â†’ Cargar
+   - Arduino IDE †’ Sketch â†’ Cargar
    - Seleccionen puerto (COM3, /dev/ttyUSB0, etc)
    - Seleccionen "Arduino Uno"
 
 2. **Abran Monitor Serial**
-   - Arduino IDE â†’ Herramientas â†’ Monitor Serial
+   - Arduino IDE †’ Herramientas â†’ Monitor Serial
    - Velocidad: **9600 baud**
    - DeberÃ­an ver JSON cada 2 segundos
 
@@ -160,9 +160,9 @@ String obtenerTimestamp() {
 
 ---
 
-## ğŸ® Comandos disponibles
+## Ÿ® Comandos disponibles
 
-Desde el backend podrÃ¡n enviar:
+Desde el backend podrÃn enviar:
 
 | Comando | Efecto |
 |---------|--------|
@@ -171,7 +171,7 @@ Desde el backend podrÃ¡n enviar:
 
 ---
 
-## ğŸ”§ Notas tÃ©cnicas
+## Ÿ”§ Notas tÃ©cnicas
 
 - **Velocidad serial:** 9600 baud
 - **Formato:** JSON por lÃ­nea
@@ -179,7 +179,7 @@ Desde el backend podrÃ¡n enviar:
 
 ---
 
-## âœï¸ Entregable
+## œï¸ Entregable
 
 Ustedes deben mostrar:
 

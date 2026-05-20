@@ -1,31 +1,31 @@
-# Tarea 3 â€” Dashboard en Vivo + Control Motor desde Web
+# Tarea 3 €” Dashboard en Vivo + Control Motor desde Web
 
-**Proyecto:** Comedero AutomÃ¡tico  
+**Proyecto:** Comedero AutomÃtico  
 **Clase:** IoT + JavaScript  
 **Nivel:** Intermedio - Avanzado
 
 ---
 
-## ğŸ¯ Objetivo
+## Ÿ¯ Objetivo
 
 Crear un dashboard que:
-- âœ… Muestre **estado motor en tiempo real**
-- âœ… Muestre **si Arduino estÃ¡ conectado**
-- âœ… Tenga **botÃ³n para encender/apagar motor**
-- âœ… Muestre **historial de eventos**
-- âœ… Se actualice automÃ¡ticamente cada 2 segundos
+- œ… Muestre **estado motor en tiempo real**
+- œ… Muestre **si Arduino estÃ¡ conectado**
+- œ… Tenga **botÃ³n para encender/apagar motor**
+- œ… Muestre **historial de eventos**
+- œ… Se actualice automÃ¡ticamente cada 2 segundos
 
 ---
 
-## âš ï¸ PRE-REQUISITOS
+## š ï¸ PRE-REQUISITOS
 
-- âœ… **Tarea 1:** Arduino enviando JSON
-- âœ… **Tarea 2:** Backend leyendo serial real
-- âœ… **Backend corriendo:** `npm start` funcionando
+- œ… **Tarea 1:** Arduino enviando JSON
+- œ… **Tarea 2:** Backend leyendo serial real
+- œ… **Backend corriendo:** `npm start` funcionando
 
 ---
 
-## ğŸ“ Actualizar frontend/index.html
+## Ÿ“ Actualizar frontend/index.html
 
 ```html
 <!doctype html>
@@ -230,7 +230,7 @@ Crear un dashboard que:
 </head>
 <body>
   <main>
-    <h1>ğŸ± Comedero AutomÃ¡tico</h1>
+    <h1>Ÿ± Comedero AutomÃ¡tico</h1>
     
     <div class="card">
       <div class="status-container">
@@ -239,7 +239,7 @@ Crear un dashboard que:
           <div class="estado-valor" id="motor-estado">
             <span class="motor-off">--</span>
           </div>
-          <small id="motor-hora">Ãšltima actualizaciÃ³n: --</small>
+          <small id="motor-hora">Ãltima actualizaciÃ³n: --</small>
         </div>
         
         <div class="status-item conexion-status">
@@ -261,12 +261,12 @@ Crear un dashboard que:
       </div>
       
       <div class="info-box">
-        ğŸ’¡ Use los botones para controlar el motor desde la web. El Arduino ejecutarÃ¡ el comando y reportarÃ¡ el cambio.
+        Ÿ’¡ Use los botones para controlar el motor desde la web. El Arduino ejecutarÃ¡ el comando y reportarÃ¡ el cambio.
       </div>
     </div>
     
     <div class="card historial">
-      <h2>ğŸ“Š Historial de Eventos</h2>
+      <h2>Ÿ“Š Historial de Eventos</h2>
       <table>
         <thead>
           <tr>
@@ -289,7 +289,7 @@ Crear un dashboard que:
 
 ---
 
-## ğŸ“ Actualizar frontend/app.js
+## Ÿ“ Actualizar frontend/app.js
 
 ```js
 // Estado global
@@ -332,10 +332,10 @@ function renderizarEstado(status, health) {
   
   const esMotorON = status.estado_motor === 'ON';
   motorEstado.innerHTML = `<span class="${esMotorON ? 'motor-on' : 'motor-off'}">
-    ${esMotorON ? 'ğŸŸ¢ ON' : 'ğŸ”´ OFF'}
+    ${esMotorON ? 'ŸŸ¢ ON' : 'ğŸ”´ OFF'}
   </span>`;
   
-  motorHora.textContent = `Ãšltima lectura: ${new Date(status.timestamp).toLocaleTimeString()}`;
+  motorHora.textContent = `Ãltima lectura: ${new Date(status.timestamp).toLocaleTimeString()}`;
   
   // ConexiÃ³n Arduino
   const conexionEstado = document.getElementById('conexion-estado');
@@ -343,7 +343,7 @@ function renderizarEstado(status, health) {
   const esConectado = health.conexion_arduino === 'conectado';
   
   conexionEstado.innerHTML = `<span class="${esConectado ? 'conectado' : 'desconectado'}">
-    ${esConectado ? 'âœ… Conectado' : 'âŒ Desconectado'}
+    ${esConectado ? 'œ… Conectado' : 'âŒ Desconectado'}
   </span>`;
   
   conexionInfo.textContent = esConectado 
@@ -408,20 +408,20 @@ async function enviarComando(comando, mensaje) {
     }
     
     const resultado = await res.json();
-    console.log('âœ… Comando ejecutado:', resultado);
+    console.log('œ… Comando ejecutado:', resultado);
     
     // Recargar panel para ver cambios
     setTimeout(cargarPanel, 500);
     
   } catch (error) {
-    console.error('âŒ Error:', error);
+    console.error('Œ Error:', error);
     alert('Error al enviar comando. Â¿Arduino conectado?');
   }
 }
 
 function mostrarError(mensaje) {
   const motorEstado = document.getElementById('motor-estado');
-  motorEstado.innerHTML = `<span class="motor-off">âš ï¸ ${mensaje}</span>`;
+  motorEstado.innerHTML = `<span class="motor-off">š ï¸ ${mensaje}</span>`;
 }
 
 // Cargar panel al inicio y cada 2 segundos
@@ -431,37 +431,37 @@ setInterval(cargarPanel, 2000);
 
 ---
 
-## âœ… VerificaciÃ³n
+## œ… VerificaciÃ³n
 
 1. **Backend corriendo:** `npm start`
 2. **Abran http://localhost:3000**
 3. DeberÃ­an ver:
-   - âœ… Estado del motor (ON/OFF)
-   - âœ… Estado de conexiÃ³n Arduino
-   - âœ… Botones funcionales
-   - âœ… Historial actualizÃ¡ndose
+   - œ… Estado del motor (ON/OFF)
+   - œ… Estado de conexiÃ³n Arduino
+   - œ… Botones funcionales
+   - œ… Historial actualizÃ¡ndose
 
 4. **Hagan clic en "Encender Motor"**
    - Arduino deberÃ­a girar el motor
    - Estado deberÃ­a cambiar a "ON"
-   - Se agregarÃ¡ evento al historial
+   - Se agregarÃ evento al historial
 
 ---
 
-## ğŸ¯ Mejorias opcionales
+## Ÿ¯ Mejorias opcionales
 
 - Agregar indicador visual animado para motor encendido
 - Mostrar duraciÃ³n del motor encendido
-- Agregar grÃ¡fico de actividad
+- Agregar grÃfico de actividad
 - Persistencia de historial en base de datos
 
 ---
 
-## âœï¸ Entregable
+## œï¸ Entregable
 
 1. **Dashboard funcionando** con Arduino real
 2. **Captura del panel** mostrando estado motor y conexiÃ³n
 3. **Prueba de control:** hacer clic en botones y mostrar que motor se mueve
 4. **Captura del historial** con eventos
-5. **Breve explicaciÃ³n:** cÃ³mo fluyen comandos web â†’ Arduino
+5. **Breve explicaciÃ³n:** cÃ³mo fluyen comandos web †’ Arduino
 
