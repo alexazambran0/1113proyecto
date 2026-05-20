@@ -1,122 +1,296 @@
-# Tarea 2 - Preparar el control manual del comedero
+# Tarea 2 — Backend con Lectura Serial Real (serialport)
 
-**Proyecto:** Comedero Automatico para Gatos  
-**Nivel:** Basico - Intermedio  
-**Objetivo:** preparar la aplicacion para que pueda ordenar un dispensado manual desde la web.
+**Proyecto:** Comedero Automático  
+**Clase:** IoT + JavaScript  
+**Nivel:** Intermedio
 
-## Que van a aprender
+---
 
-En esta tarea ustedes van a practicar:
+## 🎯 Objetivo
 
-- creacion de endpoints `POST`,
-- envio de datos desde el frontend,
-- manejo de eventos de botones,
-- registro simple de acciones,
-- preparacion del proyecto para integrarse con Arduino.
+Reemplazar el simulador de datos con **lectura real del puerto serial**, conectando el Arduino al backend Node.js.
 
-## Contexto
+---
 
-Despues de tener un panel de monitoreo mas claro, el siguiente paso del proyecto es el control manual.
+## ⚠️ PRE-REQUISITOS
 
-Todavia no vamos a mover el hardware real si aun no esta conectado, pero si vamos a dejar lista la estructura de software para hacerlo.
+- ✅ **Tarea 1 completada:** Arduino enviando JSON por serial
+- ✅ **Monitor Serial funcionando:** verificaron que Arduino envía datos
+- ✅ **Arduino conectado al USB** durante el desarrollo
+- ✅ **Node.js 18+** instalado
+- ✅ **npm** funcionando
 
-## Meta de la tarea
+---
 
-Al terminar, el sistema debe:
+## 📦 Instalar serialport
 
-1. tener un boton `Dispensar ahora` en la web,
-2. enviar una solicitud al backend,
-3. registrar el evento de dispensado manual,
-4. reflejar ese evento en el historial o en el estado actual,
-5. dejar clara la ruta que luego usara Arduino.
+En la carpeta `backend`, instalen la librería:
 
-## Archivos que deben revisar
+```bash
+cd backend
+npm install serialport
+```
 
-- [backend/src/app.js](/home/hog/Documentos/1113-2026-proyectos/comedero/backend/src/app.js:1)
-- [frontend/index.html](/home/hog/Documentos/1113-2026-proyectos/comedero/frontend/index.html:1)
-- [frontend/app.js](/home/hog/Documentos/1113-2026-proyectos/comedero/frontend/app.js:1)
+---
 
-## Actividades
+## 🔌 Detectar puerto Arduino
 
-### 1. Crear el endpoint de dispensado manual
+Antes de leer datos, necesitan saber **en qué puerto está el Arduino**.
 
-Agreguen un endpoint:
+**Windows:** COM3, COM4, COM5, etc  
+**Linux/Mac:** /dev/ttyUSB0, /dev/ttyACM0, etc
 
-`POST /api/feed/manual`
+Crear archivo `backend/src/detectarPuerto.js`:
 
-Ese endpoint debe:
+```js
+const { SerialPort } = require('serialport');
 
-- recibir la solicitud del frontend,
-- crear un evento de dispensado,
-- responder con un mensaje claro.
+async function detectarArduino() {
+  const puertos = await SerialPort.list();
+  
+  console.log('Puertos disponibles:');
+  puertos.forEach(puerto => {
+    console.log(`  - ${puerto.path} (${puerto.manufacturer || 'desconocido'})`);
+  });
+  
+  // Buscar Arduino (generalmente dice "Arduino")
+  const arduino = puertos.find(p => 
+    p.manufacturer?.includes('Arduino') || 
+    p.path.includes('COM') || 
+    p.path.includes('ttyUSB') ||
+    p.path.includes('ttyACM')
+  );
+  
+  if (arduino) {
+    console.log(`✅ Arduino encontrado: ${arduino.path}`);
+    return arduino.path;
+  } else {
+    console.log('❌ No se encontró Arduino. Verifiquen:');
+    console.log('   - Arduino conectado por USB');
+    console.log('   - Drivers instalados');
+    console.log('   - Tarea 1 completada');
+    return null;
+  }
+}
 
-Ejemplo de respuesta:
+module.exports = { detectarArduino };
+```
+
+---
+
+## 📝 Modificar backend/src/app.js
+
+Reemplazar el simulador con lectura real:
+
+```js
+const express = require('express');
+const path = require('path');
+const { SerialPort } = require('serialport');
+const { ReadlineParser } = require('@serialport/parser-readline');
+const { detectarArduino } = require('./detectarPuerto');
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../../frontend')));
+
+let lecturaActual = {
+  estado_motor: 'OFF',
+  timestamp: new Date().toISOString(),
+  conectado: false
+};
+
+const historial = [];
+
+let puerto = null;
+let parser = null;
+
+// Inicializar conexión serial
+async function inicializarSerial() {
+  try {
+    const puertoPersonal = process.env.PUERTO_ARDUINO || await detectarArduino();
+    
+    if (!puertoPersonal) {
+      console.error('❌ No se pudo detectar Arduino');
+      return;
+    }
+    
+    puerto = new SerialPort({
+      path: puertoPersonal,
+      baudRate: 9600,
+      autoOpen: true
+    });
+    
+    parser = puerto.pipe(new ReadlineParser({ delimiter: '\n' }));
+    
+    puerto.on('open', () => {
+      console.log(`✅ Conexión serial abierta en ${puertoPersonal}`);
+      lecturaActual.conectado = true;
+    });
+    
+    parser.on('data', (linea) => {
+      try {
+        const dato = JSON.parse(linea);
+        
+        // Validar que tenga los campos necesarios
+        if (dato.estado_motor && (dato.estado_motor === 'ON' || dato.estado_motor === 'OFF')) {
+          lecturaActual = {
+            estado_motor: dato.estado_motor,
+            timestamp: dato.timestamp || new Date().toISOString(),
+            evento: dato.evento || 'lectura',
+            conectado: true
+          };
+          
+          historial.push(lecturaActual);
+          if (historial.length > 500) historial.shift();
+          
+          console.log(`📊 Lectura: ${JSON.stringify(lecturaActual)}`);
+        } else {
+          console.warn(`⚠️ Dato incompleto: ${linea}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error parsing JSON: ${linea} - ${error.message}`);
+      }
+    });
+    
+    puerto.on('error', (error) => {
+      console.error(`❌ Error serial: ${error.message}`);
+      lecturaActual.conectado = false;
+    });
+    
+    puerto.on('close', () => {
+      console.log('❌ Conexión serial cerrada');
+      lecturaActual.conectado = false;
+    });
+    
+  } catch (error) {
+    console.error(`❌ No se pudo inicializar serial: ${error.message}`);
+  }
+}
+
+// APIs
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    servicio: 'activo',
+    conexion_arduino: lecturaActual.conectado ? 'conectado' : 'desconectado',
+    lecturas_guardadas: historial.length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/status', (req, res) => {
+  res.json(lecturaActual);
+});
+
+app.get('/api/history', (req, res) => {
+  const limit = Number(req.query.limit) || 50;
+  res.json(historial.slice(-Math.max(1, Math.min(limit, 200))));
+});
+
+// Enviar comando al Arduino
+app.post('/api/feed/manual', (req, res) => {
+  if (!puerto || !puerto.isOpen) {
+    return res.status(503).json({
+      ok: false,
+      error: 'Arduino desconectado'
+    });
+  }
+  
+  puerto.write('motor_on\n', (error) => {
+    if (error) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Error al enviar comando'
+      });
+    }
+    
+    res.json({
+      ok: true,
+      mensaje: 'Dispensado solicitado',
+      timestamp: new Date().toISOString()
+    });
+  });
+});
+
+app.listen(PORT, async () => {
+  console.log(`\n🚀 Servidor en http://localhost:${PORT}`);
+  console.log(`📡 Inicializando conexión serial...\n`);
+  
+  await inicializarSerial();
+});
+```
+
+---
+
+## 📦 Actualizar package.json
+
+Verifica que `backend/package.json` tiene:
 
 ```json
 {
-  "ok": true,
-  "mensaje": "Dispensado manual solicitado",
-  "origen": "web"
+  "name": "comedero-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "serialport": "^12.0.0"
+  }
 }
 ```
 
-### 2. Registrar el evento en memoria
+Si no está `serialport`, corran:
 
-Cuando se use el endpoint manual, agreguen un registro al historial con informacion como:
+```bash
+npm install serialport
+```
 
-- `timestamp`
-- `evento`
-- `estado_motor`
+---
 
-Si quieren, pueden agregar tambien:
+## ✅ Verificación
 
-- `origen`
-- `duracion_ms`
+1. **Conecten Arduino por USB**
+2. **Ejecuten el backend:**
+   ```bash
+   npm start
+   ```
+3. **Deberían ver en consola:**
+   ```
+   ✅ Conexión serial abierta en COM3 (o /dev/ttyUSB0)
+   📊 Lectura: {"estado_motor":"OFF",...}
+   ```
 
-### 3. Agregar un boton en el frontend
+4. **Verifiquen `/api/health`:**
+   - Abran http://localhost:3000/api/health
+   - `"conexion_arduino":"conectado"` ✅
 
-En la interfaz debe existir un boton con un texto claro, por ejemplo:
+---
 
-`Dispensar ahora`
+## 🔧 Troubleshooting
 
-### 4. Enviar la solicitud desde `frontend/app.js`
+| Problema | Solución |
+|----------|----------|
+| `Error: ENOENT puerto no existe` | Verifiquen puerto correcto o desconecten/conecten Arduino |
+| `JSON parse error` | Verificar que Arduino envía JSON válido (Tarea 1) |
+| `Conexión cerrada inesperadamente` | Revisar cables USB, drivers Arduino IDE |
+| `Puerto en uso` | Cierren Monitor Serial del Arduino IDE |
 
-Cuando el usuario haga clic:
+---
 
-- el frontend debe llamar a `POST /api/feed/manual`,
-- debe mostrar un mensaje de exito o error,
-- debe actualizar el panel.
+## 🎯 Próximo paso
 
-### 5. Preparar la integracion futura con Arduino
+**Tarea 3:** Frontend que muestra datos en vivo y controla motor desde web
 
-Aunque todavia no exista conexion serial, dejen comentado o documentado en el codigo donde despues se enviara el comando al dispositivo.
+---
 
-## Paso a paso sugerido
+## ✏️ Entregable
 
-1. Agregar el nuevo endpoint en backend.
-2. Probarlo con navegador o herramienta simple.
-3. Agregar el boton en `index.html`.
-4. Conectar el boton con `fetch` en `app.js`.
-5. Actualizar historial despues del dispensado.
-6. Verificar que el panel siga funcionando.
+1. **Backend funcionando** con Arduino real
+2. **Captura de consola** mostrando lecturas del Arduino
+3. **Captura de `/api/health`** con `"conexion_arduino":"conectado"`
+4. **Explicación:** cómo fluyen los datos desde Arduino al backend
 
-## Pruebas minimas
-
-1. Abrir `http://localhost:3000`.
-2. Hacer clic en `Dispensar ahora`.
-3. Confirmar que el backend responde correctamente.
-4. Confirmar que aparece un nuevo evento en el historial.
-5. Confirmar que el panel no deja de actualizar.
-
-## Entregable
-
-El equipo debe entregar:
-
-1. Codigo actualizado.
-2. Captura del boton en la interfaz.
-3. Captura o evidencia de la respuesta del endpoint manual.
-4. Explicacion corta de como se conectara despues con Arduino.
-
-## Por que esta tarea existe
-
-El objetivo real del proyecto no es solo mirar datos. El objetivo es poder controlar el comedero. Esta tarea crea el puente entre el monitoreo y el control real.

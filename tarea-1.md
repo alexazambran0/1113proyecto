@@ -1,113 +1,190 @@
-# Tarea 1 - Consolidar el monitoreo del comedero
+# Tarea 1 — Sketch Arduino + Lectura Serial Real
 
-**Proyecto:** Comedero Automatico para Gatos  
-**Nivel:** Basico  
-**Objetivo:** entender el proyecto actual y dejar listo un panel de monitoreo claro y estable.
+**Proyecto:** Comedero Automático  
+**Clase:** IoT + JavaScript  
+**Nivel:** Principiante - Intermedio
 
-## Que van a aprender
+---
 
-En esta tarea ustedes van a practicar:
+## 🎯 Objetivo
 
-- lectura de codigo existente,
-- consumo de una API,
-- actualizacion de datos en pantalla,
-- validacion basica de datos,
-- mejoras visuales simples.
+Que el Arduino Uno lea el estado del motor (conectado a L298N) y envíe datos en **JSON por serial** al backend Node.js.
 
-## Contexto
+---
 
-El proyecto ya tiene:
+## ⚠️ REQUISITOS DE HARDWARE
 
-- un backend con datos simulados,
-- un frontend que consulta el backend,
-- un panel que muestra el estado del comedero.
+Antes de empezar, **ustedes deben tener:**
 
-Antes de controlar el hardware real, primero necesitamos que este monitoreo funcione bien.
+- ✅ **Arduino Uno**
+- ✅ **Módulo L298N** (driver de motor)
+- ✅ **Motor DC** (cualquiera, 3-12V)
+- ✅ **Fuente de poder** (5V o 12V según el motor)
+- ✅ **Cable USB** para Arduino
 
-## Meta de la tarea
+---
 
-Al terminar, el sistema debe:
+## 🔌 Conexiones (L298N + Arduino + Motor)
 
-1. mostrar si el backend esta conectado,
-2. mostrar nivel, motor y hora de ultima lectura,
-3. mostrar historial reciente,
-4. resaltar niveles criticos,
-5. responder un `health` mas completo.
+### Pines Arduino → L298N
 
-## Archivos que deben revisar
+```
+Arduino Pin 9  → IN1 (control motor)
+Arduino Pin 10 → IN2 (control motor)
+Arduino GND    → GND (L298N)
+Arduino 5V     → +5V (L298N, lógica)
 
-- [backend/src/app.js](/home/hog/Documentos/1113-2026-proyectos/comedero/backend/src/app.js:1)
-- [frontend/index.html](/home/hog/Documentos/1113-2026-proyectos/comedero/frontend/index.html:1)
-- [frontend/app.js](/home/hog/Documentos/1113-2026-proyectos/comedero/frontend/app.js:1)
+L298N OUT1 + OUT2 → Motor DC
+L298N +12V / GND  → Fuente externa (si el motor necesita más poder)
+```
 
-## Actividades
+### Diagrama rápido
 
-### 1. Mejorar `GET /api/health`
+```
+[Arduino] ----PIN9---→ [L298N IN1]
+          ----PIN10--→ [L298N IN2]
+          ----GND----→ [L298N GND]
+                       [L298N OUT1] ---→ [MOTOR+]
+                       [L298N OUT2] ---→ [MOTOR-]
+          [Fuente 12V] → [L298N +12V]
+```
 
-El endpoint debe devolver:
+---
 
-- `ok`
-- `servicio`
-- `lecturas_guardadas`
-- `timestamp`
+## 📝 Código Arduino (Sketch)
 
-Ejemplo esperado:
+Copien este código en el Arduino IDE y **cárguenlo en el Arduino Uno:**
 
-```json
-{
-  "ok": true,
-  "servicio": "activo",
-  "lecturas_guardadas": 25,
-  "timestamp": "2026-05-13T14:00:00.000Z"
+```cpp
+// COMEDERO AUTOMÁTICO - LECTURA MOTOR
+// Proyecto educativo IoT + JavaScript
+// Envía estado del motor por Serial en formato JSON
+
+// Pines del L298N
+const int PIN_IN1 = 9;   // Control motor (HIGH/LOW)
+const int PIN_IN2 = 10;  // Control motor (HIGH/LOW)
+
+// Variables de control
+unsigned long ultimaLectura = 0;
+const unsigned long INTERVALO_LECTURA = 2000; // Leer cada 2 segundos
+
+void setup() {
+  // Inicializar Serial a 9600 baud
+  Serial.begin(9600);
+  
+  // Configurar pines como salida
+  pinMode(PIN_IN1, OUTPUT);
+  pinMode(PIN_IN2, OUTPUT);
+  
+  // Motor apagado al inicio
+  digitalWrite(PIN_IN1, LOW);
+  digitalWrite(PIN_IN2, LOW);
+  
+  // Mensaje de bienvenida
+  delay(1000);
+  Serial.println("{\"evento\":\"inicio\",\"mensaje\":\"Sistema listo\"}");
+}
+
+void loop() {
+  // Leer estado actual del motor (por los pines)
+  bool motorON = (digitalRead(PIN_IN1) == HIGH) || (digitalRead(PIN_IN2) == HIGH);
+  
+  // Enviar lectura cada 2 segundos
+  unsigned long ahora = millis();
+  if (ahora - ultimaLectura >= INTERVALO_LECTURA) {
+    ultimaLectura = ahora;
+    enviarDatos(motorON);
+  }
+  
+  // Verificar si el backend solicita comando
+  if (Serial.available() > 0) {
+    String comando = Serial.readStringUntil('\n');
+    comando.trim();
+    
+    if (comando == "motor_on") {
+      digitalWrite(PIN_IN1, HIGH);
+      digitalWrite(PIN_IN2, LOW);
+      Serial.println("{\"evento\":\"motor_encendido\",\"estado_motor\":\"ON\"}");
+    } 
+    else if (comando == "motor_off") {
+      digitalWrite(PIN_IN1, LOW);
+      digitalWrite(PIN_IN2, LOW);
+      Serial.println("{\"evento\":\"motor_apagado\",\"estado_motor\":\"OFF\"}");
+    }
+    else {
+      Serial.println("{\"evento\":\"error\",\"mensaje\":\"Comando no reconocido\"}");
+    }
+  }
+}
+
+void enviarDatos(bool motorActivo) {
+  // Crear JSON con estado actual
+  String json = "{";
+  json += "\"timestamp\":\"";
+  json += obtenerTimestamp();
+  json += "\",\"estado_motor\":\"";
+  json += motorActivo ? "ON" : "OFF";
+  json += "\",\"evento\":\"lectura\"";
+  json += "}";
+  
+  Serial.println(json);
+}
+
+String obtenerTimestamp() {
+  // Nota: Arduino Uno no tiene RTC integrado
+  // Por ahora devolvemos un timestamp simulado
+  // En una versión avanzada, pueden agregar RTC (DS3231)
+  unsigned long ms = millis();
+  return "2026-05-20T" + String(ms) + "Z";
 }
 ```
 
-### 2. Validar las lecturas simuladas
+---
 
-Antes de guardar una lectura en historial, revisen que:
+## ✅ Verificar que funciona
 
-- `nivel` este entre 0 y 100,
-- `estado_motor` sea `ON` o `OFF`,
-- `timestamp` exista.
+1. **Carguen el sketch en Arduino**
+   - Arduino IDE → Sketch → Cargar
+   - Seleccionen puerto (COM3, /dev/ttyUSB0, etc)
+   - Seleccionen "Arduino Uno"
 
-### 3. Agregar estado de conexion en el frontend
+2. **Abran Monitor Serial**
+   - Arduino IDE → Herramientas → Monitor Serial
+   - Velocidad: **9600 baud**
+   - Deberían ver JSON cada 2 segundos
 
-En la pagina debe aparecer un texto como:
+3. **Prueben enviar comandos manualmente**
+   - En el Monitor Serial escriban: `motor_on`
+   - El motor debería encenderse
+   - Deberían ver respuesta JSON
 
-- `Conectado` cuando la API responde,
-- `Desconectado` cuando falla.
+---
 
-### 4. Resaltar niveles criticos
+## 🎮 Comandos disponibles
 
-Si una lectura tiene `nivel < 20`, esa fila del historial debe verse diferente para que el riesgo sea evidente.
+Desde el backend podrán enviar:
 
-## Paso a paso sugerido
+| Comando | Efecto |
+|---------|--------|
+| `motor_on` | Enciende motor |
+| `motor_off` | Apaga motor |
 
-1. Ejecuten el proyecto actual.
-2. Revisen como funciona `GET /api/status`.
-3. Modifiquen `GET /api/health`.
-4. Agreguen la validacion antes de guardar en historial.
-5. Agreguen el texto de conexion en el frontend.
-6. Apliquen estilo visual a filas criticas.
-7. Prueben apagando y encendiendo el backend.
+---
 
-## Pruebas minimas
+## 🔧 Notas técnicas
 
-1. Abrir `http://localhost:3000`.
-2. Abrir `http://localhost:3000/api/health`.
-3. Confirmar que el historial se actualiza.
-4. Confirmar que se ve el estado `Conectado`.
-5. Confirmar que una lectura critica se distingue visualmente.
+- **Velocidad serial:** 9600 baud
+- **Formato:** JSON por línea
+- **Intervalo:** 2 segundos entre lecturas
 
-## Entregable
+---
 
-El equipo debe entregar:
+## ✏️ Entregable
 
-1. Codigo actualizado.
-2. Captura del panel funcionando.
-3. Captura de `/api/health`.
-4. Explicacion corta de que cambiaron.
+Ustedes deben mostrar:
 
-## Por que esta tarea existe
+1. **Arduino conectado y cargado**
+2. **Captura del Monitor Serial** mostrando JSON
+3. **Prueba de comando:** envíen `motor_on` y muestren respuesta
+4. **Breve explicación** de qué hace cada línea del código
 
-Si el monitoreo no es claro ni confiable, no tiene sentido pasar a control manual o a horarios. Esta tarea prepara la base del proyecto.
