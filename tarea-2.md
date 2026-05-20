@@ -1,30 +1,30 @@
-# Tarea 2 Äî Backend con Lectura Serial Real (serialport)
+# Tarea 2 - Backend con Lectura Serial Real (serialport)
 
-**Proyecto:** Comedero Autom√tico  
-**Clase:** IoT + JavaScript  
+**Proyecto:** Comedero Automatico
+**Clase:** IoT + JavaScript
 **Nivel:** Intermedio
 
 ---
 
-## üéØ Objetivo
+## Objetivo
 
 Reemplazar el simulador de datos con **lectura real del puerto serial**, conectando el Arduino al backend Node.js.
 
 ---
 
-## ö†Ô∏è PRE-REQUISITOS
+## PRE-REQUISITOS
 
-- úÖ **Tarea 1 completada:** Arduino enviando JSON por serial
-- úÖ **Monitor Serial funcionando:** verificaron que Arduino env√≠a datos
-- úÖ **Arduino conectado al USB** durante el desarrollo
-- úÖ **Node.js 18+** instalado
-- úÖ **npm** funcionando
+- Tarea 1 completada: Arduino enviando JSON por serial
+- Monitor Serial funcionando: verificaron que Arduino envia datos
+- Arduino conectado al USB durante el desarrollo
+- Node.js 18+ instalado
+- npm funcionando
 
 ---
 
-## üì¶ Instalar serialport
+## Instalar serialport
 
-En la carpeta `backend`, instalen la librer√≠a:
+En la carpeta backend, instalen la libreria:
 
 ```bash
 cd backend
@@ -33,14 +33,14 @@ npm install serialport
 
 ---
 
-## üîå Detectar puerto Arduino
+## Detectar puerto Arduino
 
-Antes de leer datos, necesitan saber **en qu√© puerto est√ el Arduino**.
+Antes de leer datos, necesitan saber **en que puerto esta el Arduino**.
 
-**Windows:** COM3, COM4, COM5, etc  
-**Linux/Mac:** /dev/ttyUSB0, /dev/ttyACM0, etc
+Windows: COM3, COM4, COM5, etc
+Linux/Mac: /dev/ttyUSB0, /dev/ttyACM0, etc
 
-Crear archivo `backend/src/detectarPuerto.js`:
+Crear archivo backend/src/detectarPuerto.js:
 
 ```js
 const { SerialPort } = require('serialport');
@@ -62,13 +62,12 @@ async function detectarArduino() {
   );
   
   if (arduino) {
-    console.log(`úÖ Arduino encontrado: ${arduino.path}`);
+    console.log(`Arduino encontrado: ${arduino.path}`);
     return arduino.path;
   } else {
-    console.log('ùå No se encontr√≥ Arduino. Verifiquen:');
+    console.log('No se encontro Arduino. Verifiquen:');
     console.log('   - Arduino conectado por USB');
     console.log('   - Drivers instalados');
-    console.log('   - Tarea 1 completada');
     return null;
   }
 }
@@ -78,7 +77,7 @@ module.exports = { detectarArduino };
 
 ---
 
-## üìù Modificar backend/src/app.js
+## Modificar backend/src/app.js
 
 Reemplazar el simulador con lectura real:
 
@@ -106,13 +105,13 @@ const historial = [];
 let puerto = null;
 let parser = null;
 
-// Inicializar conexi√≥n serial
+// Inicializar conexion serial
 async function inicializarSerial() {
   try {
     const puertoPersonal = process.env.PUERTO_ARDUINO || await detectarArduino();
     
     if (!puertoPersonal) {
-      console.error('ùå No se pudo detectar Arduino');
+      console.error('No se pudo detectar Arduino');
       return;
     }
     
@@ -125,7 +124,7 @@ async function inicializarSerial() {
     parser = puerto.pipe(new ReadlineParser({ delimiter: '\n' }));
     
     puerto.on('open', () => {
-      console.log(`úÖ Conexi√≥n serial abierta en ${puertoPersonal}`);
+      console.log(`Conexion serial abierta en ${puertoPersonal}`);
       lecturaActual.conectado = true;
     });
     
@@ -145,27 +144,25 @@ async function inicializarSerial() {
           historial.push(lecturaActual);
           if (historial.length > 500) historial.shift();
           
-          console.log(`üìä Lectura: ${JSON.stringify(lecturaActual)}`);
-        } else {
-          console.warn(`ö†Ô∏è Dato incompleto: ${linea}`);
+          console.log(`Lectura: ${JSON.stringify(lecturaActual)}`);
         }
       } catch (error) {
-        console.warn(`ö†Ô∏è Error parsing JSON: ${linea} - ${error.message}`);
+        console.warn(`Error parsing JSON: ${linea}`);
       }
     });
     
     puerto.on('error', (error) => {
-      console.error(`ùå Error serial: ${error.message}`);
+      console.error(`Error serial: ${error.message}`);
       lecturaActual.conectado = false;
     });
     
     puerto.on('close', () => {
-      console.log('ùå Conexi√≥n serial cerrada');
+      console.log('Conexion serial cerrada');
       lecturaActual.conectado = false;
     });
     
   } catch (error) {
-    console.error(`ùå No se pudo inicializar serial: ${error.message}`);
+    console.error(`No se pudo inicializar serial: ${error.message}`);
   }
 }
 
@@ -216,8 +213,8 @@ app.post('/api/feed/manual', (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  console.log(`\nüöÄ Servidor en http://localhost:${PORT}`);
-  console.log(`üì° Inicializando conexi√≥n serial...\n`);
+  console.log(`\nServidor en http://localhost:${PORT}`);
+  console.log(`Inicializando conexion serial...\n`);
   
   await inicializarSerial();
 });
@@ -225,9 +222,9 @@ app.listen(PORT, async () => {
 
 ---
 
-## üì¶ Actualizar package.json
+## Actualizar package.json
 
-Verifica que `backend/package.json` tiene:
+Verifica que backend/package.json tiene:
 
 ```json
 {
@@ -243,7 +240,7 @@ Verifica que `backend/package.json` tiene:
 }
 ```
 
-Si no est√ `serialport`, corran:
+Si no esta serialport, corran:
 
 ```bash
 npm install serialport
@@ -251,46 +248,45 @@ npm install serialport
 
 ---
 
-## úÖ Verificaci√≥n
+## Verificacion
 
 1. **Conecten Arduino por USB**
 2. **Ejecuten el backend:**
    ```bash
    npm start
    ```
-3. **Deber√≠an ver en consola:**
+3. **Deberan ver en consola:**
    ```
-   úÖ Conexi√≥n serial abierta en COM3 (o /dev/ttyUSB0)
-   üìä Lectura: {"estado_motor":"OFF",...}
+   Conexion serial abierta en COM3 (o /dev/ttyUSB0)
+   Lectura: {"estado_motor":"OFF",...}
    ```
 
-4. **Verifiquen `/api/health`:**
+4. **Verifiquen /api/health:**
    - Abran http://localhost:3000/api/health
-   - `"conexion_arduino":"conectado"` úÖ
+   - "conexion_arduino":"conectado"
 
 ---
 
-## üîß Troubleshooting
+## Troubleshooting
 
-| Problema | Soluci√≥n |
+| Problema | Solucion |
 |----------|----------|
-| `Error: ENOENT puerto no existe` | Verifiquen puerto correcto o desconecten/conecten Arduino |
-| `JSON parse error` | Verificar que Arduino env√≠a JSON v√lido (Tarea 1) |
-| `Conexi√≥n cerrada inesperadamente` | Revisar cables USB, drivers Arduino IDE |
-| `Puerto en uso` | Cierren Monitor Serial del Arduino IDE |
+| Error: ENOENT puerto no existe | Verifiquen puerto correcto o desconecten/conecten Arduino |
+| JSON parse error | Verificar que Arduino envia JSON valido (Tarea 1) |
+| Conexion cerrada inesperadamente | Revisar cables USB, drivers Arduino IDE |
+| Puerto en uso | Cierren Monitor Serial del Arduino IDE |
 
 ---
 
-## üéØ Pr√≥ximo paso
+## Proximo paso
 
-**Tarea 3:** Frontend que muestra datos en vivo y controla motor desde web
+Tarea 3: Frontend que muestra datos en vivo y controla motor desde web
 
 ---
 
-## úèÔ∏è Entregable
+## Entregable
 
-1. **Backend funcionando** con Arduino real
-2. **Captura de consola** mostrando lecturas del Arduino
-3. **Captura de `/api/health`** con `"conexion_arduino":"conectado"`
-4. **Explicaci√≥n:** c√≥mo fluyen los datos desde Arduino al backend
-
+1. Backend funcionando con Arduino real
+2. Captura de consola mostrando lecturas del Arduino
+3. Captura de /api/health con "conexion_arduino":"conectado"
+4. Explicacion: como fluyen los datos desde Arduino al backend

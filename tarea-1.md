@@ -1,64 +1,53 @@
-# Tarea 1 Äî Sketch Arduino + Lectura Serial Real
+# Tarea 1 - Sketch Arduino + Lectura Serial Real
 
-**Proyecto:** Comedero Autom√tico  
-**Clase:** IoT + JavaScript  
+**Proyecto:** Comedero Automatico
+**Clase:** IoT + JavaScript
 **Nivel:** Principiante - Intermedio
 
 ---
 
-## üéØ Objetivo
+## Objetivo
 
-Que el Arduino Uno lea el estado del motor (conectado a L298N) y env√≠e datos en **JSON por serial** al backend Node.js.
+Que el Arduino Uno lea el estado del motor (conectado a L298N) y envie datos en **JSON por serial** al backend Node.js.
 
 ---
 
-## ö†Ô∏è REQUISITOS DE HARDWARE
+## REQUISITOS DE HARDWARE
 
 Antes de empezar, **ustedes deben tener:**
 
-- úÖ **Arduino Uno**
-- úÖ **M√≥dulo L298N** (driver de motor)
-- úÖ **Motor DC** (cualquiera, 3-12V)
-- úÖ **Fuente de poder** (5V o 12V seg√∫n el motor)
-- úÖ **Cable USB** para Arduino
+- Arduino Uno
+- Modulo L298N (driver de motor)
+- Motor DC (cualquiera, 3-12V)
+- Fuente de poder (5V o 12V segun el motor)
+- Cable USB para Arduino
 
 ---
 
-## üîå Conexiones (L298N + Arduino + Motor)
+## Conexiones (L298N + Arduino + Motor)
 
-### Pines Arduino Üí L298N
-
-```
-Arduino Pin 9  Üí IN1 (control motor)
-Arduino Pin 10 Üí IN2 (control motor)
-Arduino GND    Üí GND (L298N)
-Arduino 5V     Üí +5V (L298N, l√≥gica)
-
-L298N OUT1 + OUT2 Üí Motor DC
-L298N +12V / GND  Üí Fuente externa (si el motor necesita m√°s poder)
-```
-
-### Diagrama r√pido
+### Pines Arduino -> L298N
 
 ```
-[Arduino] ----PIN9---Üí [L298N IN1]
-          ----PIN10--Üí [L298N IN2]
-          ----GND----Üí [L298N GND]
-                       [L298N OUT1] ---Üí [MOTOR+]
-                       [L298N OUT2] ---Üí [MOTOR-]
-          [Fuente 12V] Üí [L298N +12V]
+Arduino Pin 9  -> IN1 (control motor)
+Arduino Pin 10 -> IN2 (control motor)
+Arduino GND    -> GND (L298N)
+Arduino 5V     -> +5V (L298N, logica)
+
+L298N OUT1 + OUT2 -> Motor DC
+L298N +12V / GND  -> Fuente externa (si el motor necesita mas poder)
 ```
 
 ---
 
-## üìù C√≥digo Arduino (Sketch)
+## Codigo Arduino (Sketch)
 
-Copien este c√≥digo en el Arduino IDE y **c√rguenlo en el Arduino Uno:**
+Copien este codigo en el Arduino IDE y **carguen en el Arduino Uno:**
 
 ```cpp
-// COMEDERO AUTOM√ÅTICO - LECTURA MOTOR
+// COMEDERO AUTOMATICO - LECTURA MOTOR
 // Proyecto educativo IoT + JavaScript
-// Env√≠a estado del motor por Serial en formato JSON
+// Envia estado del motor por Serial en formato JSON
 
 // Pines del L298N
 const int PIN_IN1 = 9;   // Control motor (HIGH/LOW)
@@ -133,7 +122,6 @@ void enviarDatos(bool motorActivo) {
 String obtenerTimestamp() {
   // Nota: Arduino Uno no tiene RTC integrado
   // Por ahora devolvemos un timestamp simulado
-  // En una versi√≥n avanzada, pueden agregar RTC (DS3231)
   unsigned long ms = millis();
   return "2026-05-20T" + String(ms) + "Z";
 }
@@ -141,50 +129,49 @@ String obtenerTimestamp() {
 
 ---
 
-## úÖ Verificar que funciona
+## Verificar que funciona
 
 1. **Carguen el sketch en Arduino**
-   - Arduino IDE Üí Sketch ‚Üí Cargar
+   - Arduino IDE > Sketch > Cargar
    - Seleccionen puerto (COM3, /dev/ttyUSB0, etc)
    - Seleccionen "Arduino Uno"
 
 2. **Abran Monitor Serial**
-   - Arduino IDE Üí Herramientas ‚Üí Monitor Serial
-   - Velocidad: **9600 baud**
-   - Deber√≠an ver JSON cada 2 segundos
+   - Arduino IDE > Herramientas > Monitor Serial
+   - Velocidad: 9600 baud
+   - Deberan ver JSON cada 2 segundos
 
 3. **Prueben enviar comandos manualmente**
-   - En el Monitor Serial escriban: `motor_on`
-   - El motor deber√≠a encenderse
-   - Deber√≠an ver respuesta JSON
+   - En el Monitor Serial escriban: motor_on
+   - El motor deberia encenderse
+   - Deberan ver respuesta JSON
 
 ---
 
-## üéÆ Comandos disponibles
+## Comandos disponibles
 
-Desde el backend podr√n enviar:
+Desde el backend podran enviar:
 
 | Comando | Efecto |
 |---------|--------|
-| `motor_on` | Enciende motor |
-| `motor_off` | Apaga motor |
+| motor_on | Enciende motor |
+| motor_off | Apaga motor |
 
 ---
 
-## üîß Notas t√©cnicas
+## Notas tecnicas
 
-- **Velocidad serial:** 9600 baud
-- **Formato:** JSON por l√≠nea
-- **Intervalo:** 2 segundos entre lecturas
+- Velocidad serial: 9600 baud
+- Formato: JSON por linea
+- Intervalo: 2 segundos entre lecturas
 
 ---
 
-## úèÔ∏è Entregable
+## Entregable
 
 Ustedes deben mostrar:
 
-1. **Arduino conectado y cargado**
-2. **Captura del Monitor Serial** mostrando JSON
-3. **Prueba de comando:** env√≠en `motor_on` y muestren respuesta
-4. **Breve explicaci√≥n** de qu√© hace cada l√≠nea del c√≥digo
-
+1. Arduino conectado y cargado
+2. Captura del Monitor Serial mostrando JSON
+3. Prueba de comando: envien motor_on y muestren respuesta
+4. Breve explicacion de que hace cada linea del codigo
