@@ -6,18 +6,12 @@ Proyecto educativo de IoT para estudiantes de programacion. La meta es construir
 
 ## Que se va a construir
 
-El proyecto se construye por tareas. Cada tarea agrega una capa nueva sobre la anterior.
+El proyecto actual ya integra Arduino, backend y dashboard web. La tarea vigente es probar el sistema completo, entender el flujo de datos y continuar desde esta base.
 
-### Tarea 1 - Arduino enviando datos
-Arduino Uno lee el estado del motor y lo envia al computador en formato JSON por el puerto serial.
+### Tarea actual - Control del motor desde la aplicacion
+Dashboard web que muestra el estado del motor en tiempo real y permite encenderlo, apagarlo o dispensar durante 2 segundos. Usa un motor TT de una sola direccion controlado desde Arduino con una etapa de potencia simple.
 
-### Tarea 2 - Backend leyendo Arduino
-Servidor Node.js + Express que lee el puerto serial real, guarda el historial en memoria y expone una API REST.
-
-### Tarea 3 - Dashboard + Control del motor
-Dashboard web que muestra el estado del motor en tiempo real y permite encenderlo o apagarlo desde el navegador con botones. Usa un motor TT de una sola direccion controlado desde Arduino con una etapa de potencia simple.
-
-### Tarea 4 - Horarios automaticos (pendiente)
+### Desafio siguiente - Horarios automaticos
 Crear horarios de alimentacion desde la web para que el motor dispense automaticamente a horas definidas.
 
 ---
@@ -28,8 +22,8 @@ Los estudiantes aprenden a:
 
 1. Conectar hardware real (motor TT + transistor/MOSFET + diodo) a un Arduino Uno
 2. Enviar datos desde Arduino al computador por puerto serial
-3. Crear un servidor con Node.js y Express
-4. Consumir una API REST desde JavaScript en el navegador
+3. Usar un servidor Node.js + Express como puente entre web y Arduino
+4. Consumir una API REST y eventos en vivo desde JavaScript en el navegador
 5. Controlar hardware fisico desde una pagina web
 
 ---
@@ -59,9 +53,9 @@ Importante: el motor TT no debe conectarse directo a un pin del Arduino. El diod
 
 ## Estado actual del proyecto
 
-Las tareas 1, 2 y 3 estan documentadas y listas para implementar.
+El proyecto esta listo para probar la integracion completa: Arduino, backend serial y dashboard web.
 
-Tarea 3: conexion fisica del motor TT de una direccion, codigo Arduino y dashboard web con control en tiempo real.
+La guia vigente para estudiantes es `tarea-actual.md`.
 
 ---
 
@@ -81,9 +75,7 @@ comedero/
     app.js
   PRD.md
   README.md
-  tarea-1.md
-  tarea-2.md
-  tarea-3.md
+  tarea-actual.md
 ```
 
 ---
@@ -138,7 +130,5 @@ Navegador --> Backend Node.js --> Arduino Uno --> transistor/MOSFET/rele --> Mot
 
 ## Documentos de clase
 
-- [tarea-1.md](./tarea-1.md) - Arduino enviando JSON por serial
-- [tarea-2.md](./tarea-2.md) - Backend leyendo serial real
-- [tarea-3.md](./tarea-3.md) - Conexion motor TT + dashboard en vivo
+- [tarea-actual.md](./tarea-actual.md) - Guia vigente para probar y continuar desde la implementacion actual
 - [PRD.md](./PRD.md) - Documento de requerimientos del proyecto

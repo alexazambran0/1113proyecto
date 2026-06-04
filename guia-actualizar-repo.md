@@ -35,10 +35,10 @@ git pull origin main
 Debes ver algo como esto:
 
 ```
-Updating bdec8c9..67ae6d3
+Updating b1b4cbb..c89bd47
 Fast-forward
- README.md  | 75 +++
- tarea-3.md | 303 +++
+ README.md       |  30 +-
+ tarea-actual.md | 150 +++
 ```
 
 Eso significa que se descargaron los archivos actualizados.
@@ -54,7 +54,7 @@ ls
 Debes ver:
 
 ```
-README.md   PRD.md   tarea-1.md   tarea-2.md   tarea-3.md   backend/   frontend/
+README.md   PRD.md   tarea-actual.md   arduino/   backend/   frontend/
 ```
 
 ---
