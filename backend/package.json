@@ -7,6 +7,8 @@
     "start": "node src/app.js"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^12.0.0",
+    "serialport": "^12.0.0",
     "express": "^4.21.2"
   }
 }

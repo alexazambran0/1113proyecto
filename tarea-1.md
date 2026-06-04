@@ -1,5 +1,7 @@
 # Tarea 1 - Sketch Arduino + Lectura Serial Real
 
+> Nota para la clase actual: si el motor TT amarillo solo gira en una direccion y tiene un diodo en paralelo, no hace falta puente H. El pin del Arduino debe controlar un transistor/MOSFET o rele; no conecten el motor directo al pin. El sketch actualizado esta en `arduino/comedero/comedero.ino`.
+
 **Proyecto:** Comedero Automatico
 **Clase:** IoT + JavaScript
 **Nivel:** Principiante - Intermedio

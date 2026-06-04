@@ -1,6 +1,6 @@
 # Comedero Automatico para Gatos
 
-Proyecto educativo de IoT para estudiantes de programacion. La meta es construir una aplicacion web que controle un motor TT (a traves de un modulo L298N y un Arduino Uno) para dispensar comida a un gato desde el navegador.
+Proyecto educativo de IoT para estudiantes de programacion. La meta es construir una aplicacion web que controle un motor TT amarillo desde un Arduino Uno para dispensar comida a un gato desde el navegador.
 
 ---
 
@@ -15,7 +15,7 @@ Arduino Uno lee el estado del motor y lo envia al computador en formato JSON por
 Servidor Node.js + Express que lee el puerto serial real, guarda el historial en memoria y expone una API REST.
 
 ### Tarea 3 - Dashboard + Control del motor
-Dashboard web que muestra el estado del motor en tiempo real y permite encenderlo o apagarlo desde el navegador con botones. Incluye la conexion fisica del motor TT con el modulo L298N.
+Dashboard web que muestra el estado del motor en tiempo real y permite encenderlo o apagarlo desde el navegador con botones. Usa un motor TT de una sola direccion controlado desde Arduino con una etapa de potencia simple.
 
 ### Tarea 4 - Horarios automaticos (pendiente)
 Crear horarios de alimentacion desde la web para que el motor dispense automaticamente a horas definidas.
@@ -26,7 +26,7 @@ Crear horarios de alimentacion desde la web para que el motor dispense automatic
 
 Los estudiantes aprenden a:
 
-1. Conectar hardware real (motor TT + L298N) a un Arduino Uno
+1. Conectar hardware real (motor TT + transistor/MOSFET + diodo) a un Arduino Uno
 2. Enviar datos desde Arduino al computador por puerto serial
 3. Crear un servidor con Node.js y Express
 4. Consumir una API REST desde JavaScript en el navegador
@@ -37,27 +37,23 @@ Los estudiantes aprenden a:
 ## Hardware necesario
 
 - Arduino Uno
-- Modulo L298N (puente H)
 - Motor TT amarillo (motor DC reductor)
+- Transistor/MOSFET o modulo de rele para manejar el motor
+- Diodo en paralelo con el motor
 - Fuente externa 5V-9V o bateria 9V
 - Cables jumper
 - Cable USB para Arduino
 
 ### Conexion rapida
 
-| L298N | Arduino Uno |
-|-------|-------------|
-| IN1   | Pin 8       |
-| IN2   | Pin 9       |
-| ENA   | Pin 3 (PWM) |
-| GND   | GND         |
+| Conexion | Destino |
+|----------|---------|
+| Pin 9 Arduino | Entrada de control del transistor/MOSFET/rele |
+| GND Arduino | GND comun con la fuente del motor |
+| Motor TT | Fuente externa mediante transistor/MOSFET/rele |
+| Diodo | En paralelo con el motor |
 
-| L298N | Motor TT |
-|-------|----------|
-| OUT1  | Cable A  |
-| OUT2  | Cable B  |
-
-Ver detalle completo en `tarea-3.md`.
+Importante: el motor TT no debe conectarse directo a un pin del Arduino. El diodo ayuda contra el pico inductivo, pero no reemplaza la etapa de potencia.
 
 ---
 
@@ -65,7 +61,7 @@ Ver detalle completo en `tarea-3.md`.
 
 Las tareas 1, 2 y 3 estan documentadas y listas para implementar.
 
-Tarea 3 (en curso): conexion fisica del motor TT, codigo Arduino y dashboard web con control en tiempo real.
+Tarea 3: conexion fisica del motor TT de una direccion, codigo Arduino y dashboard web con control en tiempo real.
 
 ---
 
@@ -77,6 +73,9 @@ comedero/
     src/
       app.js
     package.json
+  arduino/
+    comedero/
+      comedero.ino
   frontend/
     index.html
     app.js
@@ -122,15 +121,17 @@ Abrir en el navegador:
 | GET    | /api/health        | Estado del servidor y Arduino      |
 | GET    | /api/status        | Ultima lectura del motor           |
 | GET    | /api/history       | Historial de eventos               |
-| POST   | /api/feed/manual   | Enviar comando al motor (motor_on / motor_off) |
+| GET    | /api/events        | Eventos en vivo para el dashboard  |
+| POST   | /api/motor         | Encender o apagar el motor         |
+| POST   | /api/feed/manual   | Dispensar durante 2 segundos       |
 
 ---
 
 ## Flujo del sistema
 
 ```
-Navegador --> Backend Node.js --> Arduino Uno --> L298N --> Motor TT
-  (boton)       (API REST)       (serial USB)   (puente H)  (dispensador)
+Navegador --> Backend Node.js --> Arduino Uno --> transistor/MOSFET/rele --> Motor TT
+  (boton)       (API + eventos)   (serial USB)        (potencia)           (dispensador)
 ```
 
 ---

@@ -1,5 +1,7 @@
 # Tarea 3 - Conexion del Motor TT y Dashboard en Vivo
 
+> Nota para la clase actual: esta guia fue escrita originalmente para L298N/puente H. Si estan usando el motor TT amarillo con diodo en paralelo y una sola direccion, NO sigan las conexiones de IN1/IN2/OUT1/OUT2. Usen el sketch `arduino/comedero/comedero.ino`, el dashboard actual y una etapa de potencia simple: transistor/MOSFET o rele. El motor no debe conectarse directo a un pin del Arduino.
+
 **Proyecto:** Comedero Automatico
 **Clase:** IoT + JavaScript
 **Nivel:** Intermedio - Avanzado
