@@ -8,11 +8,10 @@ Proyecto educativo de IoT para estudiantes de programacion. La meta es construir
 
 El proyecto actual ya integra Arduino, backend y dashboard web. La tarea vigente es probar el sistema completo, entender el flujo de datos y continuar desde esta base.
 
-### Tarea actual - Control del motor desde la aplicacion
-Dashboard web que muestra el estado del motor en tiempo real y permite encenderlo, apagarlo o dispensar durante 2 segundos. Usa un motor TT de una sola direccion controlado desde Arduino con una etapa de potencia simple.
+### Tarea actual - Control del motor y horarios desde la aplicacion
+Dashboard web que muestra el estado del motor en tiempo real, permite probar el motor durante 2 segundos, apagarlo manualmente y programar horarios de suministro. Usa un motor TT de una sola direccion controlado desde Arduino con una etapa de potencia simple. Los dispensados usan auto-apagado en Arduino para no depender solo del backend.
 
-### Desafio siguiente - Horarios automaticos
-Crear horarios de alimentacion desde la web para que el motor dispense automaticamente a horas definidas.
+Primero se prueba el boton manual para confirmar que Arduino, backend y motor funcionan. Despues se agregan horarios automaticos desde la web.
 
 ---
 
@@ -25,6 +24,7 @@ Los estudiantes aprenden a:
 3. Usar un servidor Node.js + Express como puente entre web y Arduino
 4. Consumir una API REST y eventos en vivo desde JavaScript en el navegador
 5. Controlar hardware fisico desde una pagina web
+6. Programar acciones automaticas simples desde un backend Node.js
 
 ---
 
@@ -67,6 +67,7 @@ comedero/
     src/
       app.js
     package.json
+    package-lock.json
   arduino/
     comedero/
       comedero.ino
@@ -76,6 +77,7 @@ comedero/
   PRD.md
   README.md
   tarea-actual.md
+  guia-actualizar-repo.md
 ```
 
 ---
@@ -83,6 +85,8 @@ comedero/
 ## Como ejecutar el proyecto
 
 Requisitos: Node.js 18+ y npm instalados.
+
+Importante: no hay `package.json` en la raiz del proyecto. Los comandos `npm install` y `npm start` se ejecutan dentro de `backend/`.
 
 ```bash
 # Verificar instalacion
@@ -104,6 +108,8 @@ Abrir en el navegador:
 - `http://localhost:3000/api/status` - Ultima lectura del motor
 - `http://localhost:3000/api/history?limit=20` - Historial de eventos
 
+Usen este servidor en una red confiable de clase: cualquier persona que pueda abrir el dashboard podria enviar comandos al motor.
+
 ---
 
 ## API
@@ -116,6 +122,9 @@ Abrir en el navegador:
 | GET    | /api/events        | Eventos en vivo para el dashboard  |
 | POST   | /api/motor         | Encender o apagar el motor         |
 | POST   | /api/feed/manual   | Dispensar durante 2 segundos       |
+| GET    | /api/schedules     | Listar horarios programados        |
+| POST   | /api/schedules     | Agregar horario `{ "hora": "HH:MM" }` |
+| DELETE | /api/schedules/:id | Eliminar un horario                |
 
 ---
 
@@ -131,4 +140,5 @@ Navegador --> Backend Node.js --> Arduino Uno --> transistor/MOSFET/rele --> Mot
 ## Documentos de clase
 
 - [tarea-actual.md](./tarea-actual.md) - Guia vigente para probar y continuar desde la implementacion actual
+- [guia-actualizar-repo.md](./guia-actualizar-repo.md) - Guia corta para que los estudiantes actualicen su copia local
 - [PRD.md](./PRD.md) - Documento de requerimientos del proyecto

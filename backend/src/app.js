@@ -7,6 +7,7 @@ const app = express()
 const PORT = Number(process.env.PORT) || 3000
 const BAUD_RATE = Number(process.env.ARDUINO_BAUD_RATE) || 9600
 const ARDUINO_PORT = process.env.ARDUINO_PORT
+const DURACION_DISPENSADO_MS = 2000
 
 let lecturaActual = {
   nivel: null,
@@ -18,7 +19,11 @@ let lecturaActual = {
 
 const historial = [lecturaActual]
 const clientesEventos = new Set()
+const horarios = []
 let puerto = null
+let temporizadorDispensado = null
+let dispensadoEnCurso = false
+let proximoHorarioId = 1
 
 app.use(express.json())
 app.use(express.static(path.join(__dirname, '../../frontend')))
@@ -38,6 +43,88 @@ function guardarLectura(parcial) {
 function publicarEvento(evento, data) {
   const payload = `event: ${evento}\ndata: ${JSON.stringify(data)}\n\n`
   clientesEventos.forEach((cliente) => cliente.write(payload))
+}
+
+function normalizarEstadoMotor(estado) {
+  return estado === 'ON' || estado === 'OFF' ? estado : lecturaActual.estado_motor
+}
+
+function limpiarDispensadoManual() {
+  if (temporizadorDispensado) clearTimeout(temporizadorDispensado)
+  temporizadorDispensado = null
+  dispensadoEnCurso = false
+}
+
+function publicarHorarios() {
+  publicarEvento('schedules', horarios)
+}
+
+function horaValida(hora) {
+  return typeof hora === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(hora)
+}
+
+function fechaLocal(fecha) {
+  return fecha.toLocaleDateString('en-CA')
+}
+
+function iniciarDispensado(origen, onResult) {
+  if (dispensadoEnCurso) {
+    onResult({ status: 409, error: 'Ya hay un dispensado en curso' })
+    return
+  }
+
+  if (!puerto || !puerto.isOpen) {
+    onResult({ status: 503, error: 'Arduino desconectado' })
+    return
+  }
+
+  dispensadoEnCurso = true
+
+  puerto.write('feed_2000\n', (error) => {
+    if (error) {
+      dispensadoEnCurso = false
+      onResult({ status: 500, error: error.message })
+      return
+    }
+
+    publicarEvento('feed', { origen, estado: 'iniciado', duracion_ms: DURACION_DISPENSADO_MS, timestamp: new Date().toISOString() })
+
+    temporizadorDispensado = setTimeout(() => {
+      temporizadorDispensado = null
+      dispensadoEnCurso = false
+      if (puerto && puerto.isOpen) puerto.write('motor_off\n')
+      publicarEvento('feed', { origen, estado: 'finalizado', duracion_ms: DURACION_DISPENSADO_MS, timestamp: new Date().toISOString() })
+    }, DURACION_DISPENSADO_MS)
+
+    onResult(null, { ok: true, comando: 'feed_2000', duracion_ms: DURACION_DISPENSADO_MS })
+  })
+}
+
+function revisarHorarios() {
+  const ahora = new Date()
+  const horaActual = ahora.toTimeString().slice(0, 5)
+  const marcaMinuto = `${fechaLocal(ahora)} ${horaActual}`
+
+  horarios.forEach((horario) => {
+    if (horario.hora !== horaActual || horario.ultimo_disparo === marcaMinuto) return
+
+    if (dispensadoEnCurso) {
+      horario.ultimo_disparo = marcaMinuto
+      publicarEvento('feed', { origen: 'programado', estado: 'omitido', hora: horario.hora, motivo: 'dispensado en curso', timestamp: ahora.toISOString() })
+      return
+    }
+
+    iniciarDispensado('programado', (error) => {
+      if (error) {
+        horario.ultimo_disparo = marcaMinuto
+        publicarEvento('feed', { origen: 'programado', estado: 'error', hora: horario.hora, error: error.error, timestamp: new Date().toISOString() })
+        return
+      }
+
+      horario.ultimo_disparo = marcaMinuto
+      publicarEvento('feed', { origen: 'programado', estado: 'ejecutado', hora: horario.hora, duracion_ms: DURACION_DISPENSADO_MS, timestamp: new Date().toISOString() })
+    })
+  })
 }
 
 async function detectarPuertoArduino() {
@@ -80,7 +167,7 @@ async function conectarArduino() {
         const dato = JSON.parse(linea.trim())
         guardarLectura({
           nivel: typeof dato.nivel === 'number' ? dato.nivel : lecturaActual.nivel,
-          estado_motor: dato.estado_motor === 'ON' ? 'ON' : 'OFF',
+          estado_motor: normalizarEstadoMotor(dato.estado_motor),
           conectado: true,
           mensaje: dato.evento || 'Lectura recibida'
         })
@@ -95,6 +182,7 @@ async function conectarArduino() {
 
     puerto.on('close', () => {
       puerto = null
+      limpiarDispensadoManual()
       guardarLectura({ conectado: false, mensaje: 'Conexion serial cerrada' })
       setTimeout(conectarArduino, 3000)
     })
@@ -104,7 +192,7 @@ async function conectarArduino() {
   }
 }
 
-function enviarComandoArduino(comando, res) {
+function enviarComandoArduino(comando, res, onSuccess) {
   if (!puerto || !puerto.isOpen) {
     res.status(503).json({ ok: false, error: 'Arduino desconectado' })
     return
@@ -116,6 +204,7 @@ function enviarComandoArduino(comando, res) {
       return
     }
 
+    if (onSuccess) onSuccess()
     res.json({ ok: true, comando })
   })
 }
@@ -146,22 +235,66 @@ app.get('/api/events', (req, res) => {
 
   clientesEventos.add(res)
   res.write(`event: status\ndata: ${JSON.stringify(lecturaActual)}\n\n`)
+  res.write(`event: schedules\ndata: ${JSON.stringify(horarios)}\n\n`)
 
   req.on('close', () => {
     clientesEventos.delete(res)
   })
 })
 
+app.get('/api/schedules', (req, res) => {
+  res.json(horarios)
+})
+
+app.post('/api/schedules', (req, res) => {
+  const hora = req.body && req.body.hora
+
+  if (!horaValida(hora)) {
+    res.status(400).json({ ok: false, error: 'Hora invalida. Usa HH:MM.' })
+    return
+  }
+
+  if (horarios.some((horario) => horario.hora === hora)) {
+    res.status(409).json({ ok: false, error: 'Ese horario ya existe.' })
+    return
+  }
+
+  const horario = { id: proximoHorarioId++, hora, ultimo_disparo: null }
+  horarios.push(horario)
+  horarios.sort((a, b) => a.hora.localeCompare(b.hora))
+  publicarHorarios()
+  res.status(201).json(horario)
+})
+
+app.delete('/api/schedules/:id', (req, res) => {
+  const id = Number(req.params.id)
+  const indice = horarios.findIndex((horario) => horario.id === id)
+
+  if (indice === -1) {
+    res.status(404).json({ ok: false, error: 'Horario no encontrado.' })
+    return
+  }
+
+  horarios.splice(indice, 1)
+  publicarHorarios()
+  res.json({ ok: true })
+})
+
 app.post('/api/motor', (req, res) => {
   const accion = req.body && req.body.accion
 
   if (accion === 'encender') {
+    if (dispensadoEnCurso) {
+      res.status(409).json({ ok: false, error: 'Hay un dispensado en curso. Espera que termine o usa Apagar motor.' })
+      return
+    }
+
     enviarComandoArduino('motor_on', res)
     return
   }
 
   if (accion === 'apagar') {
-    enviarComandoArduino('motor_off', res)
+    enviarComandoArduino('motor_off', res, limpiarDispensadoManual)
     return
   }
 
@@ -169,16 +302,17 @@ app.post('/api/motor', (req, res) => {
 })
 
 app.post('/api/feed/manual', (req, res) => {
-  enviarComandoArduino('motor_on', {
-    status: (code) => ({ json: (body) => res.status(code).json(body) }),
-    json: (body) => {
-      setTimeout(() => {
-        if (puerto && puerto.isOpen) puerto.write('motor_off\n')
-      }, 2000)
-      res.json({ ...body, duracion_ms: 2000 })
+  iniciarDispensado('manual', (error, data) => {
+    if (error) {
+      res.status(error.status).json({ ok: false, error: error.error })
+      return
     }
+
+    res.json(data)
   })
 })
+
+setInterval(revisarHorarios, 1000)
 
 app.listen(PORT, () => {
   console.log(`Servidor listo en http://localhost:${PORT}`)

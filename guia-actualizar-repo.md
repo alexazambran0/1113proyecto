@@ -68,6 +68,8 @@ cd backend
 npm install
 ```
 
+Importante: `npm install` se ejecuta dentro de `backend/`, no en la raiz del proyecto.
+
 ---
 
 ## Paso 6 - Corre el proyecto

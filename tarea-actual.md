@@ -1,6 +1,6 @@
-# Tarea Actual - Control del Motor desde la Aplicacion
+# Tarea Actual - Control del Motor y Horarios desde la Aplicacion
 
-Esta es la tarea vigente del proyecto. Continuen desde la implementacion actual del repositorio: backend Node.js, frontend web y sketch Arduino ya estan preparados para controlar un motor TT amarillo de una sola direccion.
+Esta es la tarea vigente del proyecto. Continuen desde la implementacion actual del repositorio: backend Node.js, frontend web y sketch Arduino ya estan preparados para controlar un motor TT amarillo de una sola direccion y programar horarios simples de suministro.
 
 No usen las instrucciones antiguas con puente H/L298N. Este proyecto esta pensado para un motor que solo necesita encenderse y apagarse en una direccion.
 
@@ -8,7 +8,7 @@ No usen las instrucciones antiguas con puente H/L298N. Este proyecto esta pensad
 
 ## Objetivo
 
-Al terminar, cada equipo debe poder controlar el motor desde la aplicacion web y explicar como viaja el comando desde el navegador hasta el Arduino.
+Al terminar, cada equipo debe poder controlar el motor desde la aplicacion web, programar horarios de suministro y explicar como viaja el comando desde el navegador hasta el Arduino.
 
 El flujo completo es:
 
@@ -58,14 +58,17 @@ Deberian ver mensajes JSON similares a:
 {"evento":"lectura","estado_motor":"OFF","nivel":50}
 ```
 
+Nota: el valor `nivel` sale de `A0`. Si no tienen sensor de nivel conectado, puede mostrar numeros aleatorios. Para esta tarea, lo importante es validar `estado_motor` y el encendido/apagado del motor.
+
 Prueben escribir estos comandos en el Monitor Serial:
 
 ```text
 motor_on
 motor_off
+feed_2000
 ```
 
-El motor deberia encenderse y apagarse.
+El motor deberia encenderse, apagarse y hacer un dispensado seguro de 2 segundos. Para horarios y para el boton `Probar motor 2 segundos`, la app usa `feed_2000` para que Arduino tambien pueda apagar el motor aunque se corte la conexion serial.
 
 ---
 
@@ -78,6 +81,8 @@ cd backend
 npm install
 npm start
 ```
+
+No ejecuten `npm install` desde la raiz del proyecto. El `package.json` esta dentro de `backend/`.
 
 El servidor queda en:
 
@@ -109,12 +114,14 @@ La pantalla debe mostrar:
 
 - Estado de conexion del Arduino
 - Estado del motor: `ON` u `OFF`
-- Boton `Encender motor`
+- Boton `Probar motor 2 segundos`
 - Boton `Apagar motor`
-- Boton `Dispensar 2 segundos`
+- Seccion `Horarios de suministro`
 - Historial de lecturas
 
 Si el Arduino aparece como desconectado, revisen primero el cable USB, el puerto seleccionado y que el Monitor Serial de Arduino IDE este cerrado.
+
+Primero prueben `Probar motor 2 segundos`. Si el motor gira, recien ahi agreguen un horario en `Horarios de suministro` usando el selector de hora y el boton `Agregar horario`.
 
 ---
 
@@ -128,6 +135,9 @@ Si el Arduino aparece como desconectado, revisen primero el cable USB, el puerto
 | `GET` | `/api/events` | Recibir cambios en vivo en el navegador |
 | `POST` | `/api/motor` | Encender o apagar el motor |
 | `POST` | `/api/feed/manual` | Encender el motor durante 2 segundos |
+| `GET` | `/api/schedules` | Listar horarios programados |
+| `POST` | `/api/schedules` | Agregar horario con `{ "hora": "HH:MM" }` |
+| `DELETE` | `/api/schedules/:id` | Eliminar un horario |
 
 Ejemplo para encender desde una herramienta HTTP:
 
@@ -157,6 +167,8 @@ Cada equipo debe poder responder:
 4. Que pin del Arduino cambia de estado.
 5. Por que el motor necesita transistor/MOSFET o rele.
 6. Para que sirve el diodo en paralelo con el motor.
+7. Donde se guardan los horarios y por que se pierden al reiniciar el servidor.
+8. Como evita el backend dispensar dos veces en el mismo minuto.
 
 ---
 
@@ -166,20 +178,19 @@ Suban o muestren:
 
 - Captura de la aplicacion con Arduino conectado.
 - Video corto encendiendo y apagando el motor desde la web.
+- Captura agregando un horario desde la seccion `Horarios de suministro`.
 - Captura de `/api/health` mostrando Arduino conectado.
 - Explicacion breve del flujo navegador -> backend -> Arduino -> motor.
 
 ---
 
-## Desafio para continuar
+## Para seguir mejorando
 
-Agreguen horarios automaticos de alimentacion.
+Los horarios actuales se guardan en memoria dentro del backend. Eso es ideal para clase porque el codigo es simple, pero significa que se pierden cuando se reinicia el servidor.
 
-La idea es que el usuario pueda elegir una hora y que el backend encienda el motor automaticamente durante 2 segundos cuando llegue ese momento.
+Ideas para continuar:
 
-Antes de programarlo, piensen:
-
-- Donde se guardan los horarios.
-- Como se evita dispensar dos veces en el mismo minuto.
-- Que pasa si Arduino esta desconectado.
-- Como se muestra el proximo horario en la pantalla.
+- Guardar horarios en un archivo JSON.
+- Mostrar cual es el proximo horario.
+- Permitir activar o desactivar un horario sin eliminarlo.
+- Mostrar un mensaje mas claro si Arduino esta desconectado cuando llega un horario.

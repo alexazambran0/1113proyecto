@@ -5,6 +5,9 @@ function clasificarNivel(nivel) {
   return 'critico'
 }
 
+let historial = []
+let horarios = []
+
 function renderEstado(data) {
   const estado = clasificarNivel(data.nivel)
   const badge = document.getElementById('estado-badge')
@@ -19,7 +22,6 @@ function renderEstado(data) {
   badge.textContent = estado
   badge.className = `badge ${estado}`
 
-  document.getElementById('btn-encender').disabled = !conectado
   document.getElementById('btn-apagar').disabled = !conectado
   document.getElementById('btn-dispensar').disabled = !conectado
 }
@@ -39,6 +41,49 @@ function renderHistorial(items) {
   })
 }
 
+function agregarLecturaHistorial(item) {
+  const ultima = historial[historial.length - 1]
+  if (ultima && ultima.timestamp === item.timestamp) return
+
+  historial.push(item)
+  if (historial.length > 20) historial.shift()
+  renderHistorial(historial)
+}
+
+function renderHorarios(items) {
+  const tbody = document.getElementById('tabla-horarios')
+  const estado = document.getElementById('estado-horarios')
+  tbody.innerHTML = ''
+
+  if (!items.length) {
+    estado.textContent = 'Sin horarios cargados.'
+    return
+  }
+
+  estado.textContent = `${items.length} horario(s) programado(s).`
+
+  items.forEach((horario) => {
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>${horario.hora}</td>
+      <td><button class="danger" type="button" data-id="${horario.id}">Eliminar</button></td>
+    `
+    tbody.appendChild(tr)
+  })
+}
+
+async function cargarHorarios() {
+  try {
+    const res = await fetch('/api/schedules')
+    if (!res.ok) throw new Error('Error de API')
+
+    horarios = await res.json()
+    renderHorarios(horarios)
+  } catch (error) {
+    document.getElementById('estado-horarios').textContent = `Error: ${error.message}`
+  }
+}
+
 async function cargarPanel() {
   try {
     const [statusRes, historyRes] = await Promise.all([
@@ -49,10 +94,10 @@ async function cargarPanel() {
     if (!statusRes.ok || !historyRes.ok) throw new Error('Error de API')
 
     const status = await statusRes.json()
-    const history = await historyRes.json()
+    historial = await historyRes.json()
 
     renderEstado(status)
-    renderHistorial(history)
+    renderHistorial(historial)
   } catch (error) {
     console.error('No se pudo actualizar el panel:', error)
   }
@@ -92,11 +137,66 @@ async function dispensarManual() {
   }
 }
 
+async function agregarHorario(event) {
+  event.preventDefault()
+
+  const input = document.getElementById('hora-horario')
+  const estado = document.getElementById('estado-horarios')
+  estado.textContent = 'Agregando horario...'
+
+  try {
+    const res = await fetch('/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hora: input.value })
+    })
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || 'No se pudo agregar')
+    input.value = ''
+    await cargarHorarios()
+    estado.textContent = `Horario agregado: ${data.hora}`
+  } catch (error) {
+    estado.textContent = `Error: ${error.message}`
+  }
+}
+
+async function eliminarHorario(id) {
+  const estado = document.getElementById('estado-horarios')
+  estado.textContent = 'Eliminando horario...'
+
+  try {
+    const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' })
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || 'No se pudo eliminar')
+    await cargarHorarios()
+    estado.textContent = 'Horario eliminado.'
+  } catch (error) {
+    estado.textContent = `Error: ${error.message}`
+  }
+}
+
 function conectarEventos() {
   const eventos = new EventSource('/api/events')
 
   eventos.addEventListener('status', (event) => {
-    renderEstado(JSON.parse(event.data))
+    const data = JSON.parse(event.data)
+    renderEstado(data)
+    agregarLecturaHistorial(data)
+  })
+
+  eventos.addEventListener('schedules', (event) => {
+    horarios = JSON.parse(event.data)
+    renderHorarios(horarios)
+  })
+
+  eventos.addEventListener('feed', (event) => {
+    const data = JSON.parse(event.data)
+    if (data.origen === 'programado') {
+      const detalle = data.error || data.motivo || `${data.duracion_ms || ''} ms`.trim()
+      document.getElementById('estado-horarios').textContent = `Dispensado programado: ${data.estado}${detalle ? ` (${detalle})` : ''}`
+    }
   })
 
   eventos.onerror = () => {
@@ -104,9 +204,13 @@ function conectarEventos() {
   }
 }
 
-document.getElementById('btn-encender').addEventListener('click', () => enviarAccionMotor('encender'))
 document.getElementById('btn-apagar').addEventListener('click', () => enviarAccionMotor('apagar'))
 document.getElementById('btn-dispensar').addEventListener('click', dispensarManual)
+document.getElementById('form-horario').addEventListener('submit', agregarHorario)
+document.getElementById('tabla-horarios').addEventListener('click', (event) => {
+  if (event.target.tagName === 'BUTTON') eliminarHorario(event.target.dataset.id)
+})
 
 cargarPanel()
+cargarHorarios()
 conectarEventos()

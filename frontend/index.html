@@ -13,6 +13,8 @@
       .status { display: grid; gap: 8px; }
       .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
       .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+      .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+      input { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font: inherit; }
       button { border: 0; border-radius: 8px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
       button:disabled { cursor: not-allowed; opacity: 0.5; }
       .primary { background: #2563eb; color: #fff; }
@@ -47,15 +49,33 @@
 
         <section class="card">
           <h2>Control del motor</h2>
-          <p>Motor DC amarillo, una sola direccion. Encender hace girar; apagar corta el giro.</p>
+          <p>Motor DC amarillo, una sola direccion. La prueba segura lo hace girar durante 2 segundos y despues se apaga solo.</p>
           <div class="controls">
-            <button id="btn-encender" class="primary" type="button">Encender motor</button>
+            <button id="btn-dispensar" class="primary" type="button">Probar motor 2 segundos</button>
             <button id="btn-apagar" class="danger" type="button">Apagar motor</button>
-            <button id="btn-dispensar" class="secondary" type="button">Dispensar 2 segundos</button>
           </div>
           <p id="resultado-comando">Sin comandos enviados.</p>
         </section>
       </div>
+
+      <section class="card">
+        <h2>Horarios de suministro</h2>
+        <p>Primero prueben el boton manual. Despues agreguen una hora para que el backend dispense automaticamente durante 2 segundos.</p>
+        <form id="form-horario" class="form-row">
+          <input id="hora-horario" type="time" required />
+          <button class="primary" type="submit">Agregar horario</button>
+        </form>
+        <p id="estado-horarios">Sin horarios cargados.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Accion</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-horarios"></tbody>
+        </table>
+      </section>
 
       <section class="card">
         <h2>Ultimas lecturas</h2>
