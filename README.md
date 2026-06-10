@@ -140,5 +140,6 @@ Navegador --> Backend Node.js --> Arduino Uno --> transistor/MOSFET/rele --> Mot
 ## Documentos de clase
 
 - [tarea-actual.md](./tarea-actual.md) - Guia vigente para probar y continuar desde la implementacion actual
+- [guia-conexiones-arduino.md](./guia-conexiones-arduino.md) - Guia simple para conectar Arduino, motor TT, etapa de potencia y diodo
 - [guia-actualizar-repo.md](./guia-actualizar-repo.md) - Guia corta para que los estudiantes actualicen su copia local
 - [PRD.md](./PRD.md) - Documento de requerimientos del proyecto
